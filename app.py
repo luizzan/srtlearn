@@ -28,10 +28,10 @@ def load_srt_files(file1, file2):
 
 st.sidebar.title('Select sources')
 
-ls_folders = os.listdir(DATA_PATH)
+ls_folders = sorted(os.listdir(DATA_PATH))
 folder = st.sidebar.selectbox('Select movie', ls_folders)
 
-ls_files = os.listdir(f'{DATA_PATH}/{folder}')
+ls_files = sorted(os.listdir(f'{DATA_PATH}/{folder}'))
 file1 = st.sidebar.selectbox('Select first subtitle file', ls_files, index=0)
 file2 = st.sidebar.selectbox('Select second subtitle file', ls_files, index=1)
 
