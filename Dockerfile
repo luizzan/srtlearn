@@ -5,4 +5,4 @@ RUN git clone https://github.com/luizzan/srtlearn.git
 WORKDIR srtlearn
 RUN pip install --no-cache-dir -r requirements.txt
 
-RUN ["streamlit", "run", "app.py"]
+RUN ["streamlit", "run", "srtlearn.py"]
