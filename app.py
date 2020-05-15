@@ -9,53 +9,79 @@ config = ConfigParser()
 CONFIG_FILE = './config/config.ini'
 config.read(CONFIG_FILE)
 DATA_PATH = config['general'].get('data_path', './data')
+LOAD_LOCAL_STR = 'Load local files'
+N_FILES = 2
 
 # ==================================================
-# FUNCTIONS
+# CLEAR CACHE FUNCTIONS
 # ==================================================
 
-@st.cache
-def load_srt_files(file1, file2):
+@st.cache(suppress_st_warning=True)
+def load_srt_files(files):
+    data = []
+    for f in files:
+        data += [srt_to_df(f)]
 
-    data1 = srt_to_df(f'{DATA_PATH}/{folder}/{file1}')
-    data2 = srt_to_df(f'{DATA_PATH}/{folder}/{file2}')
+    return data
 
-    return data1, data2
+# ==================================================
+# MAIN TEXT
+# ==================================================
+
+st.title('Subtitle reader')
+st.sidebar.title('Select sources')
 
 # ==================================================
 # SIDEBAR
 # ==================================================
 
-st.sidebar.title('Select sources')
-
-ls_folders = sorted(os.listdir(DATA_PATH))
+ls_folders = [LOAD_LOCAL_STR] + sorted(os.listdir(DATA_PATH))
 folder = st.sidebar.selectbox('Select movie', ls_folders)
 
-ls_files = sorted(os.listdir(f'{DATA_PATH}/{folder}'))
-file1 = st.sidebar.selectbox('Select first subtitle file', ls_files, index=0)
-file2 = st.sidebar.selectbox('Select second subtitle file', ls_files, index=1)
+files = []
+if folder == LOAD_LOCAL_STR:
+    for i in range(N_FILES):
+        f = st.sidebar.file_uploader('Select subtitle file', type='srt', key=f'srt{i}')
+        files += [f]
+else:
+    ls_files = sorted(os.listdir(f'{DATA_PATH}/{folder}'))
+    for i in range(N_FILES):
+        f = st.sidebar.selectbox('Select subtitle file', ls_files, index=i)
+        f = f'{DATA_PATH}/{folder}/{f}'
+        files += [f]
+
+files = [i for i in files if i is not None]
 
 lag = st.sidebar.number_input('Lag', value=0)
+# TODO add lag per file
 
 # ==================================================
 # MAIN PAGE
 # ==================================================
 
-st.title('Subtitle reader')
-
-data1, data2 = load_srt_files(file1, file2)
-
-line_number = st.number_input('Line', value=0)
-
-line1 = min(max(line_number, 0), len(data1)-1)
-st.text(data1[line1])
-
-line2_ui = st.empty()
-
-is_hide_translation = st.checkbox('Hide translation', value=False)
-
-if is_hide_translation:
-    line2_ui.text('----------')
+if len(files) < 2:
+    st.write('Select files.')
 else:
-    line2 = min(max(line_number+lag, 0), len(data2)-1)
-    line2_ui.text(data2[line2])
+    data = load_srt_files(files)
+
+    line_number = st.number_input('Line', value=0)
+
+    # Original line
+    line1 = min(max(line_number, 0), len(data[0])-1)
+    st.text(data[0][line1])
+
+    # Translation placeholders
+    trans_lines = []
+    for i in data[1:]:
+        trans_lines += [st.empty()]
+
+    # Hide translation checkbox
+    is_hide = st.checkbox('Hide translation', value=False)
+
+    # Write translation lines
+    for i, l in enumerate(trans_lines):
+        if is_hide:
+            l.text('----------')
+        else:
+            linei = min(max(line_number+lag, 0), len(data[i+1])-1)
+            l.text(data[i+1][linei])
