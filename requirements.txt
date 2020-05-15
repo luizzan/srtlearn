@@ -1,1 +1,2 @@
+googletrans==2.4.0
 streamlit==0.59.0

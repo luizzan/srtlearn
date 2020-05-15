@@ -1,10 +1,12 @@
 import os
 from configparser import ConfigParser
+from googletrans import Translator
 import streamlit as st
 from streamlit import caching
 from utils import *
 
 config = ConfigParser()
+translator = Translator()
 
 CONFIG_FILE = './config/config.ini'
 config.read(CONFIG_FILE)
@@ -23,6 +25,15 @@ def load_srt_files(files):
         data += [srt_to_df(f)]
 
     return data
+
+@st.cache(suppress_st_warning=True)
+def translate(word, src, dest):
+    try:
+        translation = 'Translation: ' + translator.translate(word, src=src, dest=dest).text
+    except Exception as e:
+        translation = 'Check your language codes and input text.'
+    return translation
+
 
 # ==================================================
 # MAIN TEXT
@@ -85,3 +96,19 @@ else:
         else:
             linei = min(max(line_number+lag, 0), len(data[i+1])-1)
             l.text(data[i+1][linei])
+
+# ==================================================
+# TRANSLATE
+# ==================================================
+
+st.sidebar.title('Translation')
+trans_src = st.sidebar.text_input('Input language', 'cs')
+trans_dest = st.sidebar.text_input('Output language', 'en')
+
+st.write('')
+st.write('')
+st.write('')
+st.markdown("""**Translate** (powered by Google Translate)""")
+text = st.text_input('Input text')
+translation = translate(text, trans_src, trans_dest)
+st.write(translation)
